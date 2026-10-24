@@ -4,7 +4,8 @@ La racha de tus rutinas en un popup para Chrome y Edge (Manifest V3): llama, rac
 racha, semana, misiones del día con la hora en que se completaron, XP y congelación.
 Proyecto independiente de la app web `justme`, con la que comparte el login y las tablas de Supabase.
 
-Las misiones, la meta y los días obligatorios se editan en la app web (modo administrador).
+La configuración (meta, días para ganar una congelación, días obligatorios y misiones) se edita desde
+el botón ⚙ del popup, o desde el modo administrador de la app web: ambos usan las mismas tablas.
 La lógica de racha vive en `src/shared/` como copia de la de la web (ver `src/shared/README.md`).
 
 ## Compilar

@@ -83,6 +83,28 @@ button:focus-visible { outline: 3px solid var(--flame); outline-offset: 2px; }
 .msg { margin: 0; font-size: .85rem; }
 .error { color: #d63b3b; }
 
+/* Configuración */
+.admin .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.admin h2 { font-size: 1rem; }
+.admin label { display: flex; flex-direction: column; gap: 5px; font-weight: 700; font-size: .85rem; }
+.admin input:not([type="checkbox"]) { font: inherit; font-weight: 400; padding: 8px 10px; border: 2px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); min-width: 0; }
+.admin input:focus-visible { outline: 3px solid var(--flame); outline-offset: 2px; }
+.admin fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.admin legend { font-weight: 700; font-size: .85rem; padding: 0; margin-bottom: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-weight: 700; font-size: .78rem; text-transform: uppercase; padding: 6px 10px; border: 2px solid var(--line); border-radius: 999px; background: var(--bg); color: var(--muted); cursor: pointer; }
+.chip.on { background: var(--flame); border-color: var(--flame); color: #fff; }
+.habits { list-style: none; margin: 0; padding: 2px 4px 2px 2px; display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; overscroll-behavior: contain; }
+.habits li { display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 2px solid var(--line); border-radius: 14px; }
+.habits li.off { opacity: .6; }
+.fields { display: flex; flex-direction: column; gap: 5px; }
+.fields input:first-child { font-weight: 700; }
+.actions { display: flex; align-items: center; gap: 6px; }
+.icon { width: 32px; height: 32px; border: 2px solid var(--line); border-radius: 9px; background: var(--bg); color: var(--ink); cursor: pointer; }
+.icon:disabled { opacity: .35; cursor: default; }
+.admin .switch { flex-direction: row; align-items: center; gap: 6px; margin-left: auto; font-weight: 600; }
+.add { display: flex; flex-direction: column; gap: 6px; }
+
 .toast { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 999px; font-weight: 700; font-size: .85rem; white-space: nowrap; }
 .toast[hidden] { display: none; }
 @media (prefers-reduced-motion: reduce) { .bar i, .habit { transition: none; } }

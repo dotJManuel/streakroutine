@@ -26,8 +26,7 @@ export interface Loaded {
   activeDays: number[];
 }
 
-/** Días, ajustes y misiones del usuario con sesión. Si aún no tiene ajustes, usa los valores iniciales. */
-export async function loadAll(): Promise<Loaded> {
+async function read() {
   const [d, s, h] = await Promise.all([
     supabase.from('days').select('date, habits'),
     supabase.from('settings').select('goal, freeze_min, active_days').maybeSingle(),
@@ -36,29 +35,50 @@ export async function loadAll(): Promise<Loaded> {
   if (d.error) throw d.error;
   if (s.error) throw s.error;
   if (h.error) throw h.error;
+  return { days: d.data ?? [], settings: s.data, habits: h.data ?? [] };
+}
 
-  const days: Days = Object.fromEntries((d.data ?? []).map((r) => [r.date as string, r.habits as Habits]));
-
-  if (!s.data) {
-    return {
-      days,
-      habits: DEFAULT_HABITS.map((x) => ({ ...x, active: true })),
-      goal: DEFAULT_GOAL,
-      freezeMin: DEFAULT_FREEZE_MIN,
-      activeDays: DEFAULT_ACTIVE_DAYS,
-    };
-  }
-  return {
-    days,
-    habits: (h.data ?? []).map((r) => ({
-      k: r.key as string,
-      name: r.name as string,
-      when: r.when_text as string,
-      active: r.active as boolean,
+/** Primera vez del usuario: copia los valores iniciales a la base de datos (igual que la app web). */
+async function seed(): Promise<void> {
+  const s = await supabase
+    .from('settings')
+    .upsert(
+      { goal: DEFAULT_GOAL, freeze_min: DEFAULT_FREEZE_MIN, active_days: DEFAULT_ACTIVE_DAYS },
+      { onConflict: 'user_id', ignoreDuplicates: true },
+    );
+  if (s.error) throw s.error;
+  const h = await supabase.from('habits').upsert(
+    DEFAULT_HABITS.map((x, position) => ({
+      key: x.k,
+      name: x.name,
+      when_text: x.when,
+      position,
+      active: true,
     })),
-    goal: s.data.goal,
-    freezeMin: s.data.freeze_min,
-    activeDays: s.data.active_days,
+    { onConflict: 'user_id,key', ignoreDuplicates: true },
+  );
+  if (h.error) throw h.error;
+}
+
+/** Días, ajustes y misiones del usuario con sesión. */
+export async function loadAll(): Promise<Loaded> {
+  let r = await read();
+  if (!r.settings) {
+    await seed();
+    r = await read();
+  }
+  if (!r.settings) throw new Error('No se pudieron crear los ajustes');
+  return {
+    days: Object.fromEntries(r.days.map((x) => [x.date as string, x.habits as Habits])),
+    habits: r.habits.map((x) => ({
+      k: x.key as string,
+      name: x.name as string,
+      when: x.when_text as string,
+      active: x.active as boolean,
+    })),
+    goal: r.settings.goal,
+    freezeMin: r.settings.freeze_min,
+    activeDays: r.settings.active_days,
   };
 }
 
@@ -67,6 +87,48 @@ export async function saveDay(date: string, habits: Habits): Promise<void> {
   const { error } = await supabase
     .from('days')
     .upsert({ date, habits, updated_at: new Date().toISOString() }, { onConflict: 'user_id,date' });
+  if (error) throw error;
+}
+
+// ---------- Configuración (misma tabla que el modo administrador de la web) ----------
+
+export async function saveSettings(goal: number, freezeMin: number, activeDays: number[]): Promise<void> {
+  const { error } = await supabase.from('settings').upsert(
+    { goal, freeze_min: freezeMin, active_days: [...activeDays].sort(), updated_at: new Date().toISOString() },
+    { onConflict: 'user_id' },
+  );
+  if (error) throw error;
+}
+
+/** Crea una misión al final de la lista y devuelve su clave. */
+export async function addHabit(name: string, when: string, position: number): Promise<string> {
+  const key = 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+  const { error } = await supabase
+    .from('habits')
+    .insert({ key, name, when_text: when, position, active: true });
+  if (error) throw error;
+  return key;
+}
+
+export async function updateHabit(k: string, patch: Partial<Omit<HabitItem, 'k'>>): Promise<void> {
+  const row: Record<string, unknown> = {};
+  if (patch.name !== undefined) row['name'] = patch.name;
+  if (patch.when !== undefined) row['when_text'] = patch.when;
+  if (patch.active !== undefined) row['active'] = patch.active;
+  const { error } = await supabase.from('habits').update(row).eq('key', k);
+  if (error) throw error;
+}
+
+/** Guarda el orden de la lista completa. */
+export async function saveOrder(list: HabitItem[]): Promise<void> {
+  const rows = list.map((h, position) => ({
+    key: h.k,
+    name: h.name,
+    when_text: h.when,
+    position,
+    active: h.active,
+  }));
+  const { error } = await supabase.from('habits').upsert(rows, { onConflict: 'user_id,key' });
   if (error) throw error;
 }
 

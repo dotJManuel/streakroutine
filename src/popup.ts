@@ -11,7 +11,9 @@ import {
   parseKey,
 } from './shared/streaks';
 import type { Habits } from './shared/types';
+import { renderAdmin } from './admin';
 import { Loaded, hasSession, loadAll, saveDay, signIn, signOut } from './data';
+import { esc } from './util';
 import './popup.css';
 
 const app = document.getElementById('app') as HTMLElement;
@@ -23,9 +25,6 @@ let today = new Date();
 let sel = dateKey(today);
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
 const saving = new Map<string, Promise<void>>();
-
-const esc = (s: string) =>
-  s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
 const keys = () => (data ? data.habits.map((h) => h.k) : []);
 const done = (k: string) => countDone(days, k, keys());
@@ -128,6 +127,7 @@ function renderMain() {
         <div class="stats">
           <span class="stat" title="Puntos de experiencia">⚡ <b>${xp}</b> XP</span>
           <span class="stat" title="Nivel">Nv <b>${level}</b></span>
+          <button type="button" class="stat out" data-act="admin" title="Configuración" aria-label="Configuración">⚙</button>
           <button type="button" class="stat out" data-act="logout">Salir</button>
         </div>
       </div>
@@ -151,7 +151,7 @@ function renderMain() {
         <div class="bar"><i style="width:${pct}%"></i></div>
       </section>
       <div class="list">${list}</div>
-      <p class="note">Las misiones y la meta se editan en la app web (modo administrador).</p>
+      <p class="note">Marca al menos ${c.goal} misiones al día para sumar a tu racha. Los días de descanso no la rompen.</p>
     </div>`;
 
   updateBadge(info.cur);
@@ -213,6 +213,8 @@ app.addEventListener('click', async (e) => {
       return renderMain();
     case 'toggle':
       return toggle(el.dataset['k']!);
+    case 'admin':
+      return renderAdmin({ app, data: data!, toast, back: renderMain });
     case 'reload':
       return void start();
     case 'logout':
@@ -229,8 +231,9 @@ app.addEventListener('click', async (e) => {
 });
 
 app.addEventListener('submit', async (e) => {
-  e.preventDefault();
   const form = e.target as HTMLFormElement;
+  if (form.id !== 'login') return;
+  e.preventDefault();
   const f = new FormData(form);
   const button = form.querySelector('button[type="submit"]') as HTMLButtonElement;
   button.disabled = true;
