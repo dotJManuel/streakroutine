@@ -28,6 +28,8 @@ const saving = new Map<string, Promise<void>>();
 
 const keys = () => (data ? data.habits.map((h) => h.k) : []);
 const done = (k: string) => countDone(days, k, keys());
+/** Solo se puede marcar o desmarcar el día de hoy; los anteriores se consultan. */
+const canEdit = () => sel === dateKey(today);
 const cfg = (): RachaConfig => ({
   habitKeys: keys(),
   goal: data!.goal,
@@ -106,7 +108,7 @@ function renderMain() {
     .map((h) => {
       const on = !!selHabits[h.k];
       const at = doneAtLabel(selHabits[h.k], sel);
-      return `<button type="button" class="habit${on ? ' on' : ''}" data-act="toggle" data-k="${esc(h.k)}" aria-pressed="${on}">
+      return `<button type="button" class="habit${on ? ' on' : ''}" data-act="toggle" data-k="${esc(h.k)}" aria-pressed="${on}"${canEdit() ? '' : ' disabled'}>
         <span class="chk"></span>
         <span class="txt"><span class="name">${esc(h.name)}</span><span class="when">${esc(h.when)}</span></span>
         ${at ? `<span class="at" title="Hora en que se completó">✓ ${esc(at)}</span>` : ''}
@@ -150,6 +152,7 @@ function renderMain() {
         <div class="goalrow"><h2>${esc(title)}</h2><span>${goalText}</span></div>
         <div class="bar"><i style="width:${pct}%"></i></div>
       </section>
+      ${canEdit() ? '' : '<p class="readonly">Día anterior: solo lectura. Únicamente se puede marcar el día de hoy.</p>'}
       <div class="list">${list}</div>
       <p class="note">Marca al menos ${c.goal} misiones al día para sumar a tu racha. Los días de descanso no la rompen.</p>
     </div>`;
@@ -170,7 +173,7 @@ function updateBadge(cur: number) {
 // ---------- Acciones ----------
 
 function toggle(hk: string) {
-  if (!data) return;
+  if (!data || !canEdit()) return;
   const k = sel;
   const before = done(k);
   const h: Habits = { ...(days[k] ?? {}) };

@@ -40,15 +40,13 @@ function paint(host: AdminHost, draft: Draft) {
   const rows = data.habits
     .map(
       (h, i) => `<li${h.active ? '' : ' class="off"'}>
-        <div class="fields">
-          <input aria-label="Nombre" maxlength="80" value="${esc(h.name)}" data-field="name" data-k="${esc(h.k)}">
-          <input aria-label="Horario o nota" placeholder="Horario o nota" maxlength="80" value="${esc(h.when)}" data-field="when" data-k="${esc(h.k)}">
-        </div>
-        <div class="actions">
+        <div class="line">
+          <input class="name" aria-label="Nombre" maxlength="80" value="${esc(h.name)}" data-field="name" data-k="${esc(h.k)}">
           <button type="button" class="icon" aria-label="Subir" data-admin="up" data-k="${esc(h.k)}"${i === 0 ? ' disabled' : ''}>▲</button>
           <button type="button" class="icon" aria-label="Bajar" data-admin="down" data-k="${esc(h.k)}"${i === data.habits.length - 1 ? ' disabled' : ''}>▼</button>
-          <label class="switch"><input type="checkbox" data-field="active" data-k="${esc(h.k)}"${h.active ? ' checked' : ''}>${h.active ? 'Activa' : 'Inactiva'}</label>
+          <input type="checkbox" class="toggle" aria-label="${h.active ? 'Activa (desactivar)' : 'Inactiva (activar)'}" title="${h.active ? 'Activa' : 'Inactiva'}" data-field="active" data-k="${esc(h.k)}"${h.active ? ' checked' : ''}>
         </div>
+        <input class="when" aria-label="Horario o nota" placeholder="Horario o nota" maxlength="80" value="${esc(h.when)}" data-field="when" data-k="${esc(h.k)}">
       </li>`,
     )
     .join('');
